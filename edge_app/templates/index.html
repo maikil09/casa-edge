@@ -53,10 +53,6 @@
           No se han detectado actividades sospechosas recientes. El sistema continúa monitoreando la cámara, sensores y cerradura.
         </p>
 
-        <div class="hero-actions">
-          <button id="simulateSuspiciousBtn">Simular actividad sospechosa</button>
-          <button class="secondary" id="simulateNormalBtn">Simular movimiento normal</button>
-        </div>
       </div>
 
       <div class="quick-state">
@@ -69,19 +65,19 @@
     <section class="cards-grid">
       <article class="metric-card">
         <span>Movimientos hoy</span>
-        <strong id="movementsToday">12</strong>
+        <strong id="movementsToday">0</strong>
         <p>Eventos detectados por sensores y cámara</p>
       </article>
 
       <article class="metric-card">
         <span>Alarmas activadas</span>
-        <strong id="alarmsToday">1</strong>
+        <strong id="alarmsToday">0</strong>
         <p>Eventos que requirieron alerta</p>
       </article>
 
       <article class="metric-card">
         <span>Última detección</span>
-        <strong id="lastDetection">08:42</strong>
+        <strong id="lastDetection">--:--</strong>
         <p>Movimiento registrado en entrada principal</p>
       </article>
 
@@ -113,10 +109,11 @@
             <span>Movimiento detectado</span>
           </div>
 
+          <!-- Streaming dinámico -->
           <img 
             id="cameraStream"
             class="camera-stream"
-            src="http://10.50.0.143:81/stream"
+            src="{{ stream_url }}"
             alt="Streaming ESP32-CAM"
           />
         </div>
@@ -126,8 +123,10 @@
           <button class="secondary-dark" id="toggleAlarmBtn">Activar alarma manual</button>
         </div>
       </article>
+    </section>
 
-      <article class="panel" id="alarmas">
+    <section class="content-grid" id="alarmas">
+      <article class="panel">
         <div class="panel-header">
           <div>
             <p class="eyebrow">Alertas recientes</p>
@@ -160,8 +159,8 @@
       </article>
     </section>
 
-    <section class="content-grid">
-      <article class="panel" id="historial">
+    <section class="content-grid" id="historial">
+      <article class="panel">
         <div class="panel-header">
           <div>
             <p class="eyebrow">Historial</p>
@@ -199,7 +198,7 @@
               <strong>Cámara principal</strong>
               <p>Streaming y detección visual</p>
             </div>
-            <span class="badge ok">Activa</span>
+            <span class="badge ok" id="cameraStatus">Activa</span>
           </div>
 
           <div class="device-item">
@@ -207,7 +206,7 @@
               <strong>Sensor de movimiento</strong>
               <p>Monitoreo de presencia</p>
             </div>
-            <span class="badge ok">Activo</span>
+            <span class="badge ok" id="sensorStatus">Activo</span>
           </div>
 
           <div class="device-item">
@@ -223,7 +222,7 @@
               <strong>Cerradura electrónica</strong>
               <p>Control de acceso físico</p>
             </div>
-            <span class="badge danger">Bloqueada</span>
+            <span class="badge danger" id="lockStatus">Bloqueada</span>
           </div>
         </div>
       </article>
@@ -236,27 +235,12 @@
           </div>
         </div>
 
-        <div class="evidence-grid" id="evidenceGrid">
-          <div class="evidence-card">
-            <div>📷</div>
-            <strong>Entrada principal</strong>
-            <p>Movimiento normal · 08:42</p>
-          </div>
-          <div class="evidence-card">
-            <div>📷</div>
-            <strong>Zona de acceso</strong>
-            <p>Alerta revisada · 07:15</p>
-          </div>
-          <div class="evidence-card">
-            <div>📷</div>
-            <strong>Puerta frontal</strong>
-            <p>Acceso autorizado · 06:40</p>
-          </div>
-        </div>
+        <div class="evidence-grid" id="evidenceGrid"></div>
       </article>
     </section>
   </main>
 
+  <!-- JS dinámico -->
   <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
 </html>
