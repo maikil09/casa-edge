@@ -1,0 +1,22 @@
+services:
+  broker_mqtt:
+    image: eclipse-mosquitto:2
+    container_name: broker_mqtt_local
+    ports:
+      - "1883:1883"
+    volumes:
+      - ./mqtt/mqtt.conf:/mosquitto/config/mosquitto.conf
+
+  edge_processor:
+    build: ./edge_app
+    container_name: raspberry_edge_simulada
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./edge_app/data:/app/data
+    environment:
+      - MQTT_HOST=broker_mqtt
+      - MQTT_PORT=1883
+      - CAMERA_STREAM_URL=http://192.168.1.80:81/stream
+    depends_on:
+      - broker_mqtt

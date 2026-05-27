@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Panel del Cliente | EdgeLock</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-icon">🔐</div>
+      <div>
+        <h1>EdgeLock</h1>
+        <p>Panel del cliente</p>
+      </div>
+    </div>
+
+    <nav>
+      <a href="#inicio" class="active">Inicio</a>
+      <a href="#camara">Cámara en vivo</a>
+      <a href="#alarmas">Alarmas</a>
+      <a href="#historial">Historial</a>
+      <a href="#estado">Estado del sistema</a>
+    </nav>
+
+    <div class="client-card">
+      <span>Ubicación protegida</span>
+      <strong>Casa / Negocio principal</strong>
+      <p>Monitoreo local activo con respuesta inmediata desde el sistema Edge.</p>
+    </div>
+  </aside>
+
+  <main class="main">
+    <header class="topbar" id="inicio">
+      <div>
+        <p class="eyebrow">Vista del cliente</p>
+        <h2>Monitoreo de seguridad en tiempo real</h2>
+      </div>
+
+      <div class="status-pill safe" id="generalStatus">
+        <span></span>
+        Sistema protegido
+      </div>
+    </header>
+
+    <section class="client-hero">
+      <div class="hero-text">
+        <p class="eyebrow">Resumen actual</p>
+        <h3 id="mainMessage">Todo está bajo control</h3>
+        <p id="mainDescription">
+          No se han detectado actividades sospechosas recientes. El sistema continúa monitoreando la cámara, sensores y cerradura.
+        </p>
+
+        <div class="hero-actions">
+          <button id="simulateSuspiciousBtn">Simular actividad sospechosa</button>
+          <button class="secondary" id="simulateNormalBtn">Simular movimiento normal</button>
+        </div>
+      </div>
+
+      <div class="quick-state">
+        <div class="state-icon" id="stateIcon">✅</div>
+        <h4 id="stateTitle">Seguro</h4>
+        <p id="stateText">Cámara, sensores y alarma funcionando correctamente.</p>
+      </div>
+    </section>
+
+    <section class="cards-grid">
+      <article class="metric-card">
+        <span>Movimientos hoy</span>
+        <strong id="movementsToday">12</strong>
+        <p>Eventos detectados por sensores y cámara</p>
+      </article>
+
+      <article class="metric-card">
+        <span>Alarmas activadas</span>
+        <strong id="alarmsToday">1</strong>
+        <p>Eventos que requirieron alerta</p>
+      </article>
+
+      <article class="metric-card">
+        <span>Última detección</span>
+        <strong id="lastDetection">08:42</strong>
+        <p>Movimiento registrado en entrada principal</p>
+      </article>
+
+      <article class="metric-card">
+        <span>Estado de cerradura</span>
+        <strong id="lockStatus">Bloqueada</strong>
+        <p>Acceso físico protegido</p>
+      </article>
+    </section>
+
+    <section class="content-grid" id="camara">
+      <article class="panel video-panel">
+        <div class="panel-header">
+          <div>
+            <p class="eyebrow">Cámara en vivo</p>
+            <h3>Entrada principal</h3>
+          </div>
+          <span class="live-badge"><span></span> En vivo</span>
+        </div>
+
+        <div class="video-frame">
+          <div class="scan-line"></div>
+          <div class="camera-overlay">
+            <span>CAM 01</span>
+            <span id="videoTime">--:--:--</span>
+          </div>
+
+          <div class="detection-box" id="detectionBox">
+            <span>Movimiento detectado</span>
+          </div>
+
+          <img 
+            id="cameraStream"
+            class="camera-stream"
+            src="http://10.50.0.143:81/stream"
+            alt="Streaming ESP32-CAM"
+          />
+        </div>
+
+        <div class="camera-actions">
+          <button id="captureBtn">Capturar evidencia</button>
+          <button class="secondary-dark" id="toggleAlarmBtn">Activar alarma manual</button>
+        </div>
+      </article>
+
+      <article class="panel" id="alarmas">
+        <div class="panel-header">
+          <div>
+            <p class="eyebrow">Alertas recientes</p>
+            <h3>Alarmas y sospechas</h3>
+          </div>
+        </div>
+
+        <div class="alert-box" id="alertBox">
+          <div class="alert-icon">🟢</div>
+          <div>
+            <strong>No hay una alarma activa</strong>
+            <p>El sistema está monitoreando normalmente.</p>
+          </div>
+        </div>
+
+        <div class="risk-list">
+          <div>
+            <span>Nivel de riesgo actual</span>
+            <strong id="riskLevel">Bajo</strong>
+          </div>
+          <div>
+            <span>Última acción automática</span>
+            <strong id="lastAction">Registro local</strong>
+          </div>
+          <div>
+            <span>Respuesta del sistema</span>
+            <strong id="systemResponse">Monitoreo activo</strong>
+          </div>
+        </div>
+      </article>
+    </section>
+
+    <section class="content-grid">
+      <article class="panel" id="historial">
+        <div class="panel-header">
+          <div>
+            <p class="eyebrow">Historial</p>
+            <h3>Movimientos registrados</h3>
+          </div>
+          <button class="small-btn" id="clearHistoryBtn">Limpiar</button>
+        </div>
+
+        <div class="history-list" id="historyList"></div>
+      </article>
+
+      <article class="panel">
+        <div class="panel-header">
+          <div>
+            <p class="eyebrow">Actividad</p>
+            <h3>Movimientos por hora</h3>
+          </div>
+        </div>
+        <canvas id="activityChart"></canvas>
+      </article>
+    </section>
+
+    <section class="content-grid" id="estado">
+      <article class="panel">
+        <div class="panel-header">
+          <div>
+            <p class="eyebrow">Estado del sistema</p>
+            <h3>Dispositivos conectados</h3>
+          </div>
+        </div>
+
+        <div class="device-list">
+          <div class="device-item">
+            <div>
+              <strong>Cámara principal</strong>
+              <p>Streaming y detección visual</p>
+            </div>
+            <span class="badge ok">Activa</span>
+          </div>
+
+          <div class="device-item">
+            <div>
+              <strong>Sensor de movimiento</strong>
+              <p>Monitoreo de presencia</p>
+            </div>
+            <span class="badge ok">Activo</span>
+          </div>
+
+          <div class="device-item">
+            <div>
+              <strong>Alarma sonora</strong>
+              <p>Respuesta ante actividad sospechosa</p>
+            </div>
+            <span class="badge warning" id="alarmDeviceState">En espera</span>
+          </div>
+
+          <div class="device-item">
+            <div>
+              <strong>Cerradura electrónica</strong>
+              <p>Control de acceso físico</p>
+            </div>
+            <span class="badge danger">Bloqueada</span>
+          </div>
+        </div>
+      </article>
+
+      <article class="panel">
+        <div class="panel-header">
+          <div>
+            <p class="eyebrow">Evidencias</p>
+            <h3>Capturas recientes</h3>
+          </div>
+        </div>
+
+        <div class="evidence-grid" id="evidenceGrid">
+          <div class="evidence-card">
+            <div>📷</div>
+            <strong>Entrada principal</strong>
+            <p>Movimiento normal · 08:42</p>
+          </div>
+          <div class="evidence-card">
+            <div>📷</div>
+            <strong>Zona de acceso</strong>
+            <p>Alerta revisada · 07:15</p>
+          </div>
+          <div class="evidence-card">
+            <div>📷</div>
+            <strong>Puerta frontal</strong>
+            <p>Acceso autorizado · 06:40</p>
+          </div>
+        </div>
+      </article>
+    </section>
+  </main>
+
+  <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
