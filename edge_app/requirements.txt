@@ -1,4 +1,6 @@
 flask
-opencv-python
-numpy
+flask-cors
 paho-mqtt
+opencv-python-headless
+numpy
+requests

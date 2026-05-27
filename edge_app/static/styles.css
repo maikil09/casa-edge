@@ -347,19 +347,28 @@ button.secondary {
   font-size: 13px;
 }
 
+/* Contenedor del streaming */
 .video-frame {
   position: relative;
-  min-height: 420px;
-  overflow: hidden;
+  width: 100%;
+  padding-top: 56.25%;
   border-radius: 24px;
-  background:
-    linear-gradient(rgba(15,23,42,0.12) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(15,23,42,0.12) 1px, transparent 1px),
-    radial-gradient(circle at center, #334155, #020617 70%);
-  background-size: 34px 34px, 34px 34px, cover;
+  overflow: hidden;
+  background: #000;
   border: 1px solid #1e293b;
 }
 
+/* Streaming de la camara */
+.video-frame img.camera-stream {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 24px;
+}
+
+/* Placeholder cuando no hay imagen de camara */
 .video-placeholder {
   position: absolute;
   inset: 0;
@@ -368,6 +377,11 @@ button.secondary {
   text-align: center;
   color: white;
   padding: 24px;
+  background:
+    linear-gradient(rgba(15, 23, 42, 0.12) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(15, 23, 42, 0.12) 1px, transparent 1px),
+    radial-gradient(circle at center, #334155, #020617 70%);
+  background-size: 34px 34px, 34px 34px, cover;
 }
 
 .camera-icon {
@@ -387,15 +401,44 @@ button.secondary {
   line-height: 1.6;
 }
 
+/* Overlay con camara y hora */
 .camera-overlay {
   position: absolute;
-  inset: 16px 16px auto 16px;
+  top: 8px;
+  left: 8px;
+  right: 8px;
   z-index: 3;
   display: flex;
   justify-content: space-between;
   color: white;
   font-weight: 800;
-  font-size: 13px;
+  font-size: 14px;
+  text-shadow: 0 0 6px rgba(0, 0, 0, 0.6);
+}
+
+/* Indicador de En vivo solo dentro del video */
+.video-frame .live-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 4;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #16a34a;
+  background: #dcfce7;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-weight: 800;
+  font-size: 12px;
+}
+
+.video-frame .live-badge span {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: #16a34a;
+  box-shadow: 0 0 0 6px rgba(22, 163, 74, 0.15);
 }
 
 .scan-line {
@@ -408,40 +451,58 @@ button.secondary {
   animation: scan 4s linear infinite;
 }
 
+/* Caja de deteccion de movimiento */
 .detection-box {
   position: absolute;
-  z-index: 4;
+  z-index: 5;
   display: none;
-  top: 34%;
-  left: 42%;
-  width: 210px;
-  height: 150px;
+  bottom: 8px;
+  left: 50%;
+  width: 220px;
+  height: 160px;
   border: 3px solid #ef4444;
-  border-radius: 18px;
+  border-radius: 16px;
   box-shadow: 0 0 30px rgba(239, 68, 68, 0.55);
+  transform: translateX(-50%);
 }
 
 .detection-box span {
   position: absolute;
-  top: -34px;
-  left: 0;
+  top: -30px;
+  left: 50%;
   background: #ef4444;
-  color: white;
-  padding: 7px 10px;
+  color: #fff;
+  padding: 6px 12px;
   border-radius: 999px;
   font-size: 12px;
   font-weight: 900;
+  white-space: nowrap;
+  transform: translateX(-50%);
 }
 
 .detection-box.show {
   display: block;
 }
 
+/* Botones de la camara */
 .camera-actions {
   display: flex;
   gap: 12px;
   flex-wrap: wrap;
-  margin-top: 16px;
+  margin-top: 12px;
+}
+
+.camera-actions button {
+  padding: 10px 18px;
+  border-radius: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.camera-actions button.secondary-dark {
+  background: #0f172a;
+  color: #fff;
 }
 
 .alert-box {
@@ -627,14 +688,27 @@ button.secondary {
 }
 
 @keyframes pulse {
-  0% { box-shadow: 0 0 0 0 rgba(255,255,255,0.25); }
-  70% { box-shadow: 0 0 0 18px rgba(255,255,255,0); }
-  100% { box-shadow: 0 0 0 0 rgba(255,255,255,0); }
+  0% {
+    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.25);
+  }
+
+  70% {
+    box-shadow: 0 0 0 18px rgba(255, 255, 255, 0);
+  }
+
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0);
+  }
 }
 
 @keyframes scan {
-  from { transform: translateY(0); }
-  to { transform: translateY(650px); }
+  from {
+    transform: translateY(0);
+  }
+
+  to {
+    transform: translateY(650px);
+  }
 }
 
 @media (max-width: 1160px) {
@@ -655,6 +729,17 @@ button.secondary {
 
   .evidence-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .video-frame {
+    padding-top: 75%;
+  }
+
+  .detection-box {
+    width: 180px;
+    height: 125px;
   }
 }
 

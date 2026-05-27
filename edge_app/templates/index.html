@@ -4,9 +4,11 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Panel del Cliente | EdgeLock</title>
+
   <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
+
 <body>
   <aside class="sidebar">
     <div class="brand">
@@ -41,7 +43,7 @@
 
       <div class="status-pill safe" id="generalStatus">
         <span></span>
-        Sistema protegido
+        <strong id="generalStatusText">Sistema protegido</strong>
       </div>
     </header>
 
@@ -53,6 +55,10 @@
           No se han detectado actividades sospechosas recientes. El sistema continúa monitoreando la cámara, sensores y cerradura.
         </p>
 
+        <div class="hero-actions">
+          <button type="button" id="heroAlarmBtn">Activar alarma</button>
+          <button type="button" class="secondary" id="resetMovementBtn">Reiniciar alerta</button>
+        </div>
       </div>
 
       <div class="quick-state">
@@ -78,7 +84,7 @@
       <article class="metric-card">
         <span>Última detección</span>
         <strong id="lastDetection">--:--</strong>
-        <p>Movimiento registrado en entrada principal</p>
+        <p id="lastDetectionText">Sin movimiento registrado</p>
       </article>
 
       <article class="metric-card">
@@ -95,33 +101,46 @@
             <p class="eyebrow">Cámara en vivo</p>
             <h3>Entrada principal</h3>
           </div>
-          <span class="live-badge"><span></span> En vivo</span>
+
+          <span class="live-badge" id="cameraLiveBadge">
+            <span></span>
+            En vivo
+          </span>
         </div>
 
         <div class="video-frame">
-          <div class="scan-line"></div>
-          <div class="camera-overlay">
-            <span>CAM 01</span>
-            <span id="videoTime">--:--:--</span>
-          </div>
-
-          <div class="detection-box" id="detectionBox">
-            <span>Movimiento detectado</span>
-          </div>
-
-          <!-- Streaming dinámico -->
-          <img 
+          <img
             id="cameraStream"
             class="camera-stream"
             src="{{ stream_url }}"
             alt="Streaming ESP32-CAM"
           />
+
+          <div class="scan-line"></div>
+
+          <div class="camera-overlay">
+            <span>CAM 01</span>
+            <span id="videoTime">--:--:--</span>
+          </div>
+
+          <div class="live-badge">
+            <span></span>
+            En vivo
+          </div>
+
+          <div class="detection-box" id="detectionBox">
+            <span>Movimiento detectado</span>
+          </div>
         </div>
 
         <div class="camera-actions">
-          <button id="captureBtn">Capturar evidencia</button>
-          <button class="secondary-dark" id="toggleAlarmBtn">Activar alarma manual</button>
+          <button type="button" id="captureBtn">Capturar evidencia</button>
+          <button type="button" class="secondary-dark" id="toggleAlarmBtn">Activar alarma manual</button>
         </div>
+
+        <p class="camera-status-text" id="movementDetail">
+          Esperando lectura de movimiento.
+        </p>
       </article>
     </section>
 
@@ -135,10 +154,10 @@
         </div>
 
         <div class="alert-box" id="alertBox">
-          <div class="alert-icon">🟢</div>
+          <div class="alert-icon" id="alertIcon">🟢</div>
           <div>
-            <strong>No hay una alarma activa</strong>
-            <p>El sistema está monitoreando normalmente.</p>
+            <strong id="alertTitle">No hay una alarma activa</strong>
+            <p id="alertText">El sistema está monitoreando normalmente.</p>
           </div>
         </div>
 
@@ -147,10 +166,12 @@
             <span>Nivel de riesgo actual</span>
             <strong id="riskLevel">Bajo</strong>
           </div>
+
           <div>
             <span>Última acción automática</span>
             <strong id="lastAction">Registro local</strong>
           </div>
+
           <div>
             <span>Respuesta del sistema</span>
             <strong id="systemResponse">Monitoreo activo</strong>
@@ -166,7 +187,8 @@
             <p class="eyebrow">Historial</p>
             <h3>Movimientos registrados</h3>
           </div>
-          <button class="small-btn" id="clearHistoryBtn">Limpiar</button>
+
+          <button type="button" class="small-btn" id="clearHistoryBtn">Limpiar</button>
         </div>
 
         <div class="history-list" id="historyList"></div>
@@ -179,6 +201,7 @@
             <h3>Movimientos por hora</h3>
           </div>
         </div>
+
         <canvas id="activityChart"></canvas>
       </article>
     </section>
@@ -222,7 +245,7 @@
               <strong>Cerradura electrónica</strong>
               <p>Control de acceso físico</p>
             </div>
-            <span class="badge danger" id="lockStatus">Bloqueada</span>
+            <span class="badge danger" id="lockDeviceStatus">Bloqueada</span>
           </div>
         </div>
       </article>
@@ -240,7 +263,6 @@
     </section>
   </main>
 
-  <!-- JS dinámico -->
   <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
 </html>
