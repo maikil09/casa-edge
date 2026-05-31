@@ -236,8 +236,10 @@ Ejemplo:
 ## 👨‍💻 Autores
 
 Proyecto académico desarrollado por:
+
 - Ana Maria Chaves Perez
 - Gabriela Reyes Gonzalez
 - Michael Steven Medina Fernandez
 - Maria Alejandra Cabrera Arauz
+
 del curso de Computación en el Borde.
