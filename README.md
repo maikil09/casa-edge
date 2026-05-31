@@ -218,8 +218,6 @@ Temáticas aplicadas:
 
 ```markdown
 ![Maqueta](images/maqueta.jpg)
-
-![Dashboard](images/dashboard.png)
 ```
 
 ---
