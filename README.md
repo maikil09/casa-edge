@@ -65,6 +65,65 @@ El proyecto incluye una maqueta funcional de una vivienda inteligente utilizada 
 
 ---
 
+## 🧩 Diagrama de Arquitectura
+
+Explicación detallada de los componentes del sistema y su interacción.
+
+- Sensores IoT capturan información del entorno.
+- Los datos son enviados mediante MQTT.
+- El broker MQTT distribuye los mensajes.
+- La Edge App procesa los eventos localmente.
+- La interfaz web permite monitoreo y control en tiempo real.
+- El usuario interactúa con el sistema desde la red local.
+
+```text
+                           ┌───────────────────────┐
+                           │       Usuario         │
+                           │  PC / Celular / Web   │
+                           └───────────┬───────────┘
+                                       │
+                                       ▼
+                           ┌───────────────────────┐
+                           │    Interfaz Web UI    │
+                           │ HTML • CSS • JS       │
+                           └───────────┬───────────┘
+                                       │
+                                       ▼
+                    ┌────────────────────────────────────┐
+                    │           Edge Application         │
+                    │              Python               │
+                    │ Procesamiento Local de Eventos    │
+                    │ Lógica de Automatización          │
+                    └───────────────┬───────────────────┘
+                                    │
+                                    ▼
+                    ┌────────────────────────────────────┐
+                    │           Broker MQTT             │
+                    │ Comunicación Publish/Subscribe    │
+                    └───────┬───────────────┬───────────┘
+                            │               │
+                            │               │
+              ┌─────────────▼───┐     ┌────▼────────────┐
+              │    Sensores      │     │   Actuadores    │
+              │                  │     │                 │
+              │ • Temperatura    │     │ • Luces         │
+              │ • Movimiento     │     │ • Alarmas       │
+              │ • Humedad        │     │ • Ventilación   │
+              │ • Presencia      │     │ • Puertas       │
+              └──────────────────┘     └─────────────────┘
+
+                           Infraestructura Docker
+        ┌──────────────────────────────────────────────────────┐
+        │                                                      │
+        │  ┌──────────────┐      ┌─────────────────────────┐   │
+        │  │ MQTT Broker  │◄────►│      Edge App           │   │
+        │  │  Container   │      │      Container          │   │
+        │  └──────────────┘      └─────────────────────────┘   │
+        │                                                      │
+        └──────────────────────────────────────────────────────┘
+```
+---
+
 ## 🛠️ Tecnologías Utilizadas
 
 ### Backend
@@ -89,6 +148,25 @@ El proyecto incluye una maqueta funcional de una vivienda inteligente utilizada 
 ### Computación en el Borde
 
 * Edge Computing
+
+---
+
+## 🐳 Descripción de la Imagen Docker
+
+El proyecto utiliza contenedores Docker para garantizar portabilidad, reproducibilidad y facilidad de despliegue.
+
+Funciones principales de la imagen:
+
+- Ejecutar la aplicación Edge de forma aislada.
+- Gestionar dependencias automáticamente.
+- Facilitar el despliegue en dispositivos como Raspberry Pi o servidores Linux.
+- Permitir escalabilidad mediante Docker Compose.
+
+Beneficios:
+
+- Entorno consistente en cualquier dispositivo.
+- Menor tiempo de configuración.
+- Fácil mantenimiento y actualización.
 
 ---
 
@@ -193,6 +271,34 @@ Reducción del tráfico de red y menor consumo de recursos cloud.
 ### Escalabilidad
 
 Nuevos dispositivos pueden agregarse fácilmente a la arquitectura.
+
+---
+
+## ⚠️ Limitaciones
+
+A pesar de los beneficios obtenidos, el proyecto presenta algunas limitaciones:
+
+- Dependencia de la infraestructura local.
+- Capacidad limitada de procesamiento en dispositivos Edge de bajo costo.
+- Escalabilidad restringida frente a arquitecturas cloud de gran tamaño.
+- Ausencia de mecanismos avanzados de tolerancia a fallos.
+- Seguridad básica en las comunicaciones MQTT.
+
+Estas limitaciones son comunes en entornos académicos y prototipos funcionales.
+
+---
+
+## 🚀 Posibilidades de Mejora
+
+Trabajos futuros que pueden ampliar el alcance del proyecto:
+
+- Implementar inteligencia artificial en el nodo Edge.
+- Incorporar análisis predictivo mediante Machine Learning.
+- Agregar autenticación y cifrado avanzado para MQTT.
+- Integrar servicios híbridos Edge-Cloud.
+- Implementar monitoreo centralizado.
+- Incorporar balanceo de carga entre múltiples nodos Edge.
+- Añadir sensores y actuadores adicionales para nuevas funcionalidades domóticas.
 
 ---
 
