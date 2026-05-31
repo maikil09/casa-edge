@@ -216,15 +216,6 @@ Temáticas aplicadas:
 
 ## 📸 Evidencias
 
-Se recomienda agregar:
-
-* Capturas de pantalla de la interfaz.
-* Fotografías de la maqueta.
-* Diagramas de arquitectura.
-* Videos demostrativos.
-
-Ejemplo:
-
 ```markdown
 ![Maqueta](images/maqueta.jpg)
 
