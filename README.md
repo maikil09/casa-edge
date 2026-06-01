@@ -34,13 +34,6 @@ El proyecto incluye una maqueta funcional de una vivienda inteligente utilizada 
 
 ---
 
-## ⚙️ Arquitectura del Sistema
-
-<img width="733" height="364" alt="image" src="https://github.com/user-attachments/assets/3f07222c-02ff-407b-a94e-0ebc1c99510b" />
-
-
----
-
 ## 🧩 Diagrama de Arquitectura
 
 Explicación detallada de los componentes del sistema y su interacción a traves de MQTT.
@@ -52,52 +45,7 @@ Explicación detallada de los componentes del sistema y su interacción a traves
 - La interfaz web permite monitoreo y control en tiempo real.
 - El usuario interactúa con el sistema desde la red local.
 
-```text
-                           ┌───────────────────────┐
-                           │       Usuario         │
-                           │  PC / Celular / Web   │
-                           └───────────┬───────────┘
-                                       │
-                                       ▼
-                           ┌───────────────────────┐
-                           │    Interfaz Web UI    │
-                           │ HTML • CSS • JS       │
-                           └───────────┬───────────┘
-                                       │
-                                       ▼
-                    ┌────────────────────────────────────┐
-                    │           Edge Application         │
-                    │              Python               │
-                    │ Procesamiento Local de Eventos    │
-                    │ Lógica de Automatización          │
-                    └───────────────┬───────────────────┘
-                                    │
-                                    ▼
-                    ┌────────────────────────────────────┐
-                    │           Broker MQTT             │
-                    │ Comunicación Publish/Subscribe    │
-                    └───────┬───────────────┬───────────┘
-                            │               │
-                            │               │
-              ┌─────────────▼───┐     ┌────▼────────────┐
-              │    Sensores      │     │   Actuadores    │
-              │                  │     │                 │
-              │ • Temperatura    │     │ • Luces         │
-              │ • Movimiento     │     │ • Alarmas       │
-              │ • Humedad        │     │ • Ventilación   │
-              │ • Presencia      │     │ • Puertas       │
-              └──────────────────┘     └─────────────────┘
-
-                           Infraestructura Docker
-        ┌──────────────────────────────────────────────────────┐
-        │                                                      │
-        │  ┌──────────────┐      ┌─────────────────────────┐   │
-        │  │ MQTT Broker  │◄────►│      Edge App           │   │
-        │  │  Container   │      │      Container          │   │
-        │  └──────────────┘      └─────────────────────────┘   │
-        │                                                      │
-        └──────────────────────────────────────────────────────┘
-```
+<img width="733" height="364" alt="image" src="https://github.com/user-attachments/assets/3f07222c-02ff-407b-a94e-0ebc1c99510b" />
 ---
 
 ## 🛠️ Tecnologías Utilizadas
