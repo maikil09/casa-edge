@@ -325,6 +325,26 @@ Temáticas aplicadas:
 ```markdown
 ![Maqueta](images/maqueta.jpg)
 ```
+## Galería
+
+<table align="center">
+  <tr>
+    <td align="center">
+      <img width="360" height="480" alt="Imagen 1" src="https://github.com/user-attachments/assets/d9d14ef6-22a0-4a9b-98e6-af081858ba26" />
+    </td>
+    <td align="center">
+      <img width="360" height="480" alt="image" src="https://github.com/user-attachments/assets/52899d77-7480-49fc-9e67-afd74a2ca88e" />
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+     <img width="360" height="480" alt="image" src="https://github.com/user-attachments/assets/00c688f7-ab2f-4d69-9502-5611c2f201b7" />
+    </td>
+    <td align="center">
+      <img width="360" height="480" alt="image" src="https://github.com/user-attachments/assets/5ef20742-f198-4eef-bf87-3a6aae4002de" />
+    </td>
+  </tr>
+</table>
 
 ---
 
