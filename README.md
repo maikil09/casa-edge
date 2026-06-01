@@ -36,32 +36,8 @@ El proyecto incluye una maqueta funcional de una vivienda inteligente utilizada 
 
 ## ⚙️ Arquitectura del Sistema
 
-```text
-┌─────────────────────┐
-│   Sensores IoT      │
-└──────────┬──────────┘
-           │
-           ▼
-┌─────────────────────┐
-│    Broker MQTT      │
-└──────────┬──────────┘
-           │
-           ▼
-┌─────────────────────┐
-│      Edge App       │
-│ Procesamiento Local │
-└──────────┬──────────┘
-           │
-           ▼
-┌─────────────────────┐
-│   Interfaz Web      │
-└──────────┬──────────┘
-           │
-           ▼
-┌─────────────────────┐
-│      Usuario        │
-└─────────────────────┘
-```
+<img width="733" height="364" alt="image" src="https://github.com/user-attachments/assets/3f07222c-02ff-407b-a94e-0ebc1c99510b" />
+
 
 ---
 
