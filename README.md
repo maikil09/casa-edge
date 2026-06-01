@@ -45,7 +45,8 @@ Explicación detallada de los componentes del sistema y su interacción a traves
 - La interfaz web permite monitoreo y control en tiempo real.
 - El usuario interactúa con el sistema desde la red local.
 
-<img width="733" height="364" alt="image" src="https://github.com/user-attachments/assets/3f07222c-02ff-407b-a94e-0ebc1c99510b" />
+<img width="1600" height="900" alt="image" src="https://github.com/user-attachments/assets/c993de39-9d57-4154-9d5c-d57806708399" />
+
 ---
 
 ## 🛠️ Tecnologías Utilizadas
