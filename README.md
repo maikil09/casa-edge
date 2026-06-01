@@ -322,11 +322,6 @@ Temáticas aplicadas:
 
 ## 📸 Evidencias
 
-```markdown
-![Maqueta](images/maqueta.jpg)
-```
-## Galería
-
 <table align="center">
   <tr>
     <td align="center">
