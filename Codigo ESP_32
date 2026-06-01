@@ -1,0 +1,522 @@
+#include <WiFi.h>
+#include <PubSubClient.h>
+
+// -------------------------------------------------------
+// Configuración WiFi y MQTT
+// -------------------------------------------------------
+const char* ssid        = "Kings";
+const char* password    = "Gabriela123";
+
+// IP del PC/Raspberry donde corre Docker y Mosquitto.
+// Debe ser la IP real de la red WiFi, NO la IP del contenedor.
+const char* mqtt_server = "10.141.47.25";
+
+WiFiClient espClient;
+PubSubClient client(espClient);
+
+// -------------------------------------------------------
+// Pines
+// -------------------------------------------------------
+#define LED_MOVIMIENTO 13
+#define LED_ALARMA     12
+#define BUZZER         14
+
+// -------------------------------------------------------
+// Teclado 4x4
+// -------------------------------------------------------
+const int ROWS = 4;
+const int COLS = 4;
+
+int rowPins[ROWS] = {15, 2, 4, 16};
+int colPins[COLS] = {17, 18, 19, 21};
+
+char keys[ROWS][COLS] = {
+  {'1','2','3','A'},
+  {'4','5','6','B'},
+  {'7','8','9','C'},
+  {'*','0','#','D'}
+};
+
+// -------------------------------------------------------
+// Seguridad
+// -------------------------------------------------------
+const String PASSWORD = "1234";
+
+const int MAX_INTENTOS = 3;
+
+const unsigned long TIEMPO_CLAVE = 30000UL;   // 30 segundos antes de prender buzzer
+const unsigned long TIEMPO_LED_MOV = 5000UL;  // LED movimiento dura 5 segundos
+
+// -------------------------------------------------------
+// Estados
+// -------------------------------------------------------
+enum EstadoAlarma {
+  ALARMA_APAGADA,
+  ESPERANDO_CLAVE,
+  ALARMA_ACTIVA
+};
+
+EstadoAlarma estado = ALARMA_APAGADA;
+
+// -------------------------------------------------------
+// Variables del protocolo
+// -------------------------------------------------------
+String entrada = "";
+int intentos = 0;
+
+unsigned long tiempoInicioAlerta = 0;
+unsigned long tiempoInicioLedMov = 0;
+unsigned long ultimoLogTiempo = 0;
+
+bool ledMovimientoApagado = true;
+bool movimientoPendiente = false;
+
+// Evita reaccionar repetidamente a mensajes iguales.
+unsigned long ultimoComandoOff = 0;
+unsigned long ultimoComandoOn = 0;
+
+// -------------------------------------------------------
+// WiFi
+// -------------------------------------------------------
+void setup_wifi() {
+  Serial.println("[WiFi] Conectando...");
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(ssid, password);
+
+  int intentoWifi = 0;
+
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+    intentoWifi++;
+
+    if (intentoWifi > 40) {
+      Serial.println("\n[WiFi] No conectó. Reiniciando...");
+      ESP.restart();
+    }
+  }
+
+  Serial.println();
+  Serial.print("[WiFi] Conectado. IP ESP32-S3: ");
+  Serial.println(WiFi.localIP());
+}
+
+// -------------------------------------------------------
+// MQTT
+// -------------------------------------------------------
+void publicar(const char* topic, const char* payload) {
+  if (!client.connected()) return;
+
+  bool ok = client.publish(topic, payload);
+
+  Serial.print("[MQTT OUT] ");
+  Serial.print(topic);
+  Serial.print(" -> ");
+  Serial.print(payload);
+  Serial.println(ok ? " [OK]" : " [FALLO]");
+}
+
+void reconnect() {
+  while (!client.connected()) {
+    Serial.print("[MQTT] Conectando a ");
+    Serial.print(mqtt_server);
+    Serial.print("... ");
+
+    String clientId = "ESP32S3_TEC_";
+    clientId += String((uint32_t)ESP.getEfuseMac(), HEX);
+
+    if (client.connect(clientId.c_str())) {
+      Serial.println("conectado");
+
+      client.subscribe("casa/entrada/movimiento");
+      client.subscribe("casa/alarma/control");
+
+      publicar("casa/estado", "ESP32_TECLADO_CONECTADA");
+
+      Serial.println("[MQTT] Suscrito a casa/entrada/movimiento");
+      Serial.println("[MQTT] Suscrito a casa/alarma/control");
+    } else {
+      Serial.print("fallo rc=");
+      Serial.print(client.state());
+      Serial.println(". Reintentando en 5s...");
+      delay(5000);
+    }
+  }
+}
+
+// -------------------------------------------------------
+// Teclado matricial sin librería
+// -------------------------------------------------------
+char leerTecla() {
+  for (int r = 0; r < ROWS; r++) {
+    digitalWrite(rowPins[r], LOW);
+
+    for (int c = 0; c < COLS; c++) {
+      if (digitalRead(colPins[c]) == LOW) {
+        delay(30);
+
+        if (digitalRead(colPins[c]) == LOW) {
+          char tecla = keys[r][c];
+
+          unsigned long t0 = millis();
+
+          while (digitalRead(colPins[c]) == LOW) {
+            delay(5);
+
+            if (millis() - t0 > 2000) {
+              break;
+            }
+          }
+
+          delay(50);
+
+          digitalWrite(rowPins[r], HIGH);
+          return tecla;
+        }
+      }
+    }
+
+    digitalWrite(rowPins[r], HIGH);
+  }
+
+  return '\0';
+}
+
+// -------------------------------------------------------
+// Apagado físico sin causar ciclo MQTT
+// -------------------------------------------------------
+void apagarFisico() {
+  digitalWrite(LED_MOVIMIENTO, LOW);
+  digitalWrite(LED_ALARMA, LOW);
+  digitalWrite(BUZZER, LOW);
+
+  estado = ALARMA_APAGADA;
+  entrada = "";
+  intentos = 0;
+  ledMovimientoApagado = true;
+  movimientoPendiente = false;
+
+  Serial.println("[ALARMA] Todo apagado físicamente.");
+}
+
+// -------------------------------------------------------
+// Apagar por clave correcta
+// -------------------------------------------------------
+void apagarPorClaveCorrecta() {
+  apagarFisico();
+
+  publicar("casa/estado", "ALARMA_APAGADA");
+  publicar("casa/auth/resultado", "OK");
+
+  // IMPORTANTE:
+  // No publicamos casa/alarma/control -> ALARM_OFF aquí,
+  // porque la ESP32 está suscrita a ese tópico y se escucharía a sí misma.
+  // Eso era lo que causaba el ciclo infinito.
+
+  Serial.println("[AUTH] Clave correcta. Alarma apagada.");
+}
+
+// -------------------------------------------------------
+// Apagar desde dashboard
+// -------------------------------------------------------
+void apagarDesdeDashboard() {
+  if (estado == ALARMA_APAGADA) {
+    Serial.println("[MQTT] ALARM_OFF recibido, pero la alarma ya estaba apagada. Ignorado.");
+    return;
+  }
+
+  apagarFisico();
+
+  publicar("casa/estado", "ALARMA_APAGADA");
+
+  // No publicamos auth/resultado OK porque esto no fue clave correcta,
+  // fue apagado manual desde dashboard.
+  Serial.println("[DASHBOARD] Alarma apagada desde dashboard.");
+}
+
+// -------------------------------------------------------
+// Activar alarma sonora
+// -------------------------------------------------------
+void activarAlarmaSonora(const char* razon) {
+  if (estado == ALARMA_ACTIVA) {
+    return;
+  }
+
+  estado = ALARMA_ACTIVA;
+
+  digitalWrite(LED_MOVIMIENTO, LOW);
+  digitalWrite(LED_ALARMA, HIGH);
+  digitalWrite(BUZZER, HIGH);
+
+  Serial.print("[ALARMA] ACTIVADA. Razón: ");
+  Serial.println(razon);
+
+  if (String(razon) == "MAX_INTENTOS") {
+    publicar("casa/auth/resultado", "FAIL_MAX_INTENTOS");
+  } else {
+    publicar("casa/auth/resultado", "FAIL_TIMEOUT");
+  }
+
+  publicar("casa/estado", "ALARMA_ACTIVA");
+
+  // No publicamos casa/alarma/control -> ALARM_ON aquí para evitar rebotes.
+  // El dashboard se entera por casa/auth/resultado y casa/estado.
+}
+
+// -------------------------------------------------------
+// Inicio del protocolo de seguridad
+// -------------------------------------------------------
+void iniciarProtocoloSeguridad() {
+  if (estado != ALARMA_APAGADA) {
+    Serial.println("[SEGURIDAD] Ya hay una alerta activa. Ignorando nuevo movimiento.");
+    return;
+  }
+
+  estado = ESPERANDO_CLAVE;
+
+  entrada = "";
+  intentos = 0;
+
+  tiempoInicioAlerta = millis();
+  tiempoInicioLedMov = millis();
+  ultimoLogTiempo = millis();
+
+  ledMovimientoApagado = false;
+
+  digitalWrite(LED_MOVIMIENTO, HIGH);
+  digitalWrite(LED_ALARMA, HIGH);
+  digitalWrite(BUZZER, LOW);
+
+  publicar("casa/alarma/sensores", "MOVIMIENTO_DETECTADO");
+  publicar("casa/estado", "ESPERANDO_CLAVE");
+
+  Serial.println("============================================");
+  Serial.println("[SEGURIDAD] Movimiento detectado.");
+  Serial.println("[SEGURIDAD] Tienes 30 segundos para ingresar la clave.");
+  Serial.println("[TECLADO] Digita la clave y presiona #.");
+  Serial.println("[TECLADO] Presiona * para borrar.");
+  Serial.println("[BUZZER] El buzzer se activará después de 30 segundos si no se desactiva.");
+  Serial.println("============================================");
+}
+
+// -------------------------------------------------------
+// Procesar teclado
+// -------------------------------------------------------
+void procesarTecla(char k) {
+  if (k == '\0') return;
+
+  if (estado == ALARMA_APAGADA) return;
+
+  Serial.print("[TECLADO] Tecla detectada: ");
+  Serial.println(k);
+
+  if (k == '*') {
+    entrada = "";
+    publicar("casa/estado", "ENTRADA_BORRADA");
+    Serial.println("[TECLADO] Entrada borrada.");
+    return;
+  }
+
+  if (k == '#') {
+    Serial.print("[AUTH] Validando clave: ");
+    Serial.println(entrada);
+
+    if (entrada == PASSWORD) {
+      apagarPorClaveCorrecta();
+      return;
+    }
+
+    intentos++;
+    entrada = "";
+
+    Serial.print("[AUTH] Clave incorrecta. Intento ");
+    Serial.print(intentos);
+    Serial.print("/");
+    Serial.println(MAX_INTENTOS);
+
+    publicar("casa/estado", "CLAVE_INCORRECTA");
+
+    if (intentos >= MAX_INTENTOS) {
+      activarAlarmaSonora("MAX_INTENTOS");
+    }
+
+    return;
+  }
+
+  if (k >= '0' && k <= '9') {
+    if (entrada.length() < 8) {
+      entrada += k;
+    }
+
+    Serial.print("[TECLADO] Dígitos ingresados: ");
+    Serial.println(entrada.length());
+  }
+}
+
+// -------------------------------------------------------
+// Actualizar protocolo
+// -------------------------------------------------------
+void actualizarProtocolo() {
+  if (estado == ALARMA_APAGADA) return;
+
+  if (!ledMovimientoApagado && millis() - tiempoInicioLedMov >= TIEMPO_LED_MOV) {
+    digitalWrite(LED_MOVIMIENTO, LOW);
+    ledMovimientoApagado = true;
+    Serial.println("[LED] LED_MOVIMIENTO apagado.");
+  }
+
+  if (estado == ESPERANDO_CLAVE) {
+    unsigned long transcurrido = millis() - tiempoInicioAlerta;
+
+    if (millis() - ultimoLogTiempo >= 5000) {
+      ultimoLogTiempo = millis();
+
+      unsigned long restante = 0;
+
+      if (transcurrido < TIEMPO_CLAVE) {
+        restante = (TIEMPO_CLAVE - transcurrido) / 1000;
+      }
+
+      Serial.print("[TIEMPO] Restante para activar buzzer: ");
+      Serial.print(restante);
+      Serial.println("s");
+    }
+
+    if (transcurrido >= TIEMPO_CLAVE) {
+      activarAlarmaSonora("TIMEOUT");
+    }
+  }
+}
+
+// -------------------------------------------------------
+// Callback MQTT
+// -------------------------------------------------------
+void callback(char* topic, byte* payload, unsigned int length) {
+  String msg = "";
+
+  for (unsigned int i = 0; i < length; i++) {
+    msg += (char)payload[i];
+  }
+
+  String t = String(topic);
+  msg.trim();
+
+  Serial.print("[MQTT IN] ");
+  Serial.print(t);
+  Serial.print(" -> ");
+  Serial.println(msg);
+
+  if (t == "casa/entrada/movimiento") {
+    if (estado == ALARMA_APAGADA) {
+      movimientoPendiente = true;
+    } else {
+      Serial.println("[MQTT] Movimiento recibido, pero ya hay alarma/protocolo activo.");
+    }
+  }
+
+  if (t == "casa/alarma/control") {
+    if (msg == "ALARM_OFF") {
+      unsigned long ahora = millis();
+
+      if (ahora - ultimoComandoOff < 1000) {
+        Serial.println("[MQTT] ALARM_OFF repetido ignorado.");
+        return;
+      }
+
+      ultimoComandoOff = ahora;
+      apagarDesdeDashboard();
+    }
+
+    else if (msg == "ALARM_ON") {
+      unsigned long ahora = millis();
+
+      if (ahora - ultimoComandoOn < 1000) {
+        Serial.println("[MQTT] ALARM_ON repetido ignorado.");
+        return;
+      }
+
+      ultimoComandoOn = ahora;
+
+      if (estado == ALARMA_APAGADA) {
+        iniciarProtocoloSeguridad();
+      } else {
+        Serial.println("[MQTT] ALARM_ON recibido, pero ya hay protocolo activo.");
+      }
+    }
+  }
+}
+
+// -------------------------------------------------------
+// Setup
+// -------------------------------------------------------
+void setup() {
+  Serial.begin(115200);
+  delay(500);
+
+  Serial.println();
+  Serial.println("============================================");
+  Serial.println("[BOOT] Sistema de alarma ESP32-S3");
+  Serial.println("============================================");
+
+  pinMode(LED_MOVIMIENTO, OUTPUT);
+  pinMode(LED_ALARMA, OUTPUT);
+  pinMode(BUZZER, OUTPUT);
+
+  digitalWrite(LED_MOVIMIENTO, LOW);
+  digitalWrite(LED_ALARMA, LOW);
+  digitalWrite(BUZZER, LOW);
+
+  for (int r = 0; r < ROWS; r++) {
+    pinMode(rowPins[r], OUTPUT);
+    digitalWrite(rowPins[r], HIGH);
+  }
+
+  for (int c = 0; c < COLS; c++) {
+    pinMode(colPins[c], INPUT_PULLUP);
+  }
+
+  Serial.println("[BOOT] Pines configurados.");
+
+  Serial.println("[BOOT] Test hardware 1s...");
+  digitalWrite(LED_MOVIMIENTO, HIGH);
+  digitalWrite(LED_ALARMA, HIGH);
+  digitalWrite(BUZZER, HIGH);
+
+  delay(1000);
+
+  digitalWrite(LED_MOVIMIENTO, LOW);
+  digitalWrite(LED_ALARMA, LOW);
+  digitalWrite(BUZZER, LOW);
+
+  Serial.println("[BOOT] Test terminado.");
+
+  setup_wifi();
+
+  client.setServer(mqtt_server, 1883);
+  client.setCallback(callback);
+
+  Serial.println("[BOOT] Sistema listo. Esperando movimiento...");
+}
+
+// -------------------------------------------------------
+// Loop
+// -------------------------------------------------------
+void loop() {
+  if (!client.connected()) {
+    reconnect();
+  }
+
+  client.loop();
+
+  if (movimientoPendiente) {
+    movimientoPendiente = false;
+    iniciarProtocoloSeguridad();
+  }
+
+  char tecla = leerTecla();
+  procesarTecla(tecla);
+
+  actualizarProtocolo();
+
+  delay(5);
+}
