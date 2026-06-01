@@ -67,7 +67,7 @@ El proyecto incluye una maqueta funcional de una vivienda inteligente utilizada 
 
 ## 🧩 Diagrama de Arquitectura
 
-Explicación detallada de los componentes del sistema y su interacción.
+Explicación detallada de los componentes del sistema y su interacción a traves de MQTT.
 
 - Sensores IoT capturan información del entorno.
 - Los datos son enviados mediante MQTT.
